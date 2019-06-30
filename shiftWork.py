@@ -7,15 +7,17 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime, date, timedelta
 import calendar
 import jpholiday
+from operator import itemgetter
 
 
 
 iniFile     = '' # 設定
 workDayList = [] # シフト設定日
+luckyList   = [] # ラッキーさんリスト
+yobi = {0:"月",1:"火",2:"水",3:"木",4:"金",5:"土",6:"日"}
 
 '''
 参照
-https://qiita.com/calderarie/items/0ef921b476911a55148d
 https://www.draw.io/#G1NWr0eZlKIxYNEkeO8e29hx7TYkem8LQk
 '''
 
@@ -62,21 +64,9 @@ def createShift():
             else:
                 workDay.setShift(basicShift[workDay.date.weekday()])
 
-    # 出力リスト
-    printList = []
-    dayList   = []
-    for workDay in workDayList:
-        day = workDay.date
-        dayList.append("{}/{}".format(day.month, day.day))
 
-    printList.append(dayList)
+    manageSheet()
 
-    for workDay in workDayList:
-        for shift in workDay.shift:
-            # print(workDay.date, shift.person.name, shift.startTime)
-            printList.append([shift.person.name, shift.startTime])
-
-    writeCsv(printList)
 
 
 
@@ -98,6 +88,97 @@ def createShift():
     シフトclass
     窓口◯名。
     '''
+
+# 表を編集して出力
+def manageSheet():
+
+    # 出力リスト
+    printList  = []
+    dayList    = ['名']
+    personList = []
+
+    # 日付行
+    for workDay in workDayList:
+
+        # 日付
+        day = workDay.date
+        day = "{}/{}".format(day.month, day.day)
+
+        dayList.append('朝' + day)
+        dayList.append('昼' + day)
+        dayList.append('夜' + day)
+        dayList.append('始' + day)
+        dayList.append('終' + day)
+        dayList.append('ラ' + day)
+
+    printList.append(dayList)
+
+    yobiList = ['']
+    # 曜日
+    for workDay in workDayList:
+
+        for i in range(6):
+            yobiList.append(yobi[workDay.date.weekday()])
+
+    printList.append(yobiList)
+
+    # 名前列
+    for shift in workDayList[0].shift:
+        printList.append([shift.person.name])
+
+    for workDay in workDayList:
+        for i, shift in enumerate(workDay.shift):
+
+            printList[i + 2].append(shift.morningShift)
+            printList[i + 2].append(shift.afternoonShift)
+            printList[i + 2].append(shift.eveningShift)
+            printList[i + 2].append(shift.startTime)
+            printList[i + 2].append(shift.endTime)
+            printList[i + 2].append('')
+
+    lotteryLucky()
+    writeCsv(printList)
+
+# ラッキーさん抽選
+def lotteryLucky():
+
+    maxNum = 999
+
+    global workDayList
+    global luckyList
+
+    # ラッキーさんリストが空の場合
+    if not luckyList:
+
+        # 人情報を設定
+        for shift in workDayList[0].shift:
+            luckyList.append([0, shift.person])
+
+    print(luckyList)
+
+    for workDay in workDayList:
+
+        lotteryList = luckyList
+
+        for shift in workDay.shift:
+            minNum = 0
+
+            for lottery in lotteryList:
+                if shift.startTime != '08:30':
+                    lottery = maxNum
+
+        sorted(lotteryList, key=itemgetter(0))
+        lotteryList[0]
+        print(lotteryList)
+
+
+
+            # 土日祝の場合
+            # if workDay.date.weekday() >= 5 and workDay.date.holiday:
+            #     printList[i + 1].append('')
+            # else:
+            #
+            #     printList[i + 1].append('')
 
 
 
@@ -130,12 +211,10 @@ def getBasicShift():
 
     return basicShiftList
 
-
 # 開始日から終了日までの日のリストを取得
 def date_range(start_date: datetime, end_date: datetime):
     diff = (end_date - start_date).days + 1
     return (start_date + timedelta(i) for i in range(diff))
-
 
 # csvファイルをリスト形式で開く（読み取り専用）
 def getCsv(csvPath):
@@ -152,6 +231,7 @@ def writeCsv(strList):
     with open(iniFile.get('CSV', 'OUT'), 'wt', encoding='shift_jis') as fout:
         csvout = csv.writer(fout)
         csvout.writerows(strList)
+
 # 初期化
 def initialize():
 
@@ -168,6 +248,8 @@ def initialize():
 
     for day in date_range(startDay, endDay):
         workDayList.append(workDay.WorkDay(day))
+
+        # TODO 祝日設定
 
 
 if __name__ == '__main__':

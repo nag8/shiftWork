@@ -9,15 +9,9 @@ class WorkDay():
         self.holiday        = holiday
         self.shift          = []
 
-    # 祝日を設定
-    def setHoliday(self, holiday):
-        self.holiday = holiday
-
     # シフトリストを設定
     def setShift(self, shift):
         self.shift.append(shift)
-        # self.afternoonShift = shiftList[1]
-        # self.eveningShift   = shiftList[2]
 
     # イベントを設定
     def setEvent(self, event):
