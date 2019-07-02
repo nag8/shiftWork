@@ -10,16 +10,9 @@ import jpholiday
 from operator import itemgetter
 import copy
 
-
 iniFile                    = '' # 設定
 workDayList                = [] # シフト設定日
 luckyCountList             = [] # ラッキーさんリスト
-CATEGORY_MORNING_COUNTER   = 1  # 朝窓口
-CATEGORY_AFTERNOON_COUNTER = 2  # 昼窓口
-CATEGORY_EVENING_COUNTER   = 3  # 夜窓口
-CATEGORY_STUDY             = 4  # 研修
-CATEGORY_MEETING           = 5  # 会議
-CATEGORY_EVENT_KAKOM       = 6  # かこむ主催
 
 
 '''
@@ -44,17 +37,20 @@ def createShift():
 
     for wd in workDayList:
 
+        if wd.holiday:
+            wd.personList = copy.deepcopy(basicShiftList[6])
+        else:
+            wd.personList = copy.deepcopy(basicShiftList[wd.date.weekday()])
+
         if wd.date.weekday() == 6:
             count3rdSunday += 1
 
-        wd.personList = copy.deepcopy(basicShiftList[wd.date.weekday()])
-
         # 第3SUNDAYの場合
-        if count3rdSunday == 3:
+        if count3rdSunday == 3 and wd.date.weekday() == 6:
             for person in wd.personList:
-                person.startTime = getTime('8:30')
-                person.endTime   = getTime('17:30')
-                person.eventList = [workDay.Event(getTime('8:30'), getTime('17:30'), CATEGORY_STUDY, '第3SUNDAY')]
+                person.work.startTime = getTime('8:30')
+                person.work.endTime   = getTime('17:30')
+                person.work.eventList = [workDay.Event(getTime('8:30'), getTime('17:30'), workDay.CATEGORY_STUDY, '第3SUNDAY')]
 
 # 表を編集して出力
 def manageSheet():
@@ -110,7 +106,7 @@ def getCounterList(eventList):
     subList = []
     strCounter = '窓口'
 
-    for searchCategory in {CATEGORY_MORNING_COUNTER, CATEGORY_AFTERNOON_COUNTER, CATEGORY_EVENING_COUNTER}:
+    for searchCategory in {workDay.CATEGORY_MORNING_COUNTER, workDay.CATEGORY_AFTERNOON_COUNTER, workDay.CATEGORY_EVENING_COUNTER}:
 
         counterFlg = False
 
@@ -141,7 +137,7 @@ def lotteryLucky():
     for wd in workDayList:
 
         # 平日の場合
-        if wd.date.weekday() < 5:
+        if wd.date.weekday() < 5 and not wd.holiday:
 
             lotteryList = copy.deepcopy(luckyCountList)
 
@@ -195,13 +191,13 @@ def getBasicPerson(row, num):
     eveningCounter   = row[6 + num * 5]
 
     if morningCounter:
-        eventList.append(workDay.Event(getTime('8:30'), getTime('12:30'), CATEGORY_MORNING_COUNTER, '窓口'))
+        eventList.append(workDay.Event(getTime('8:30'), getTime('12:30'), workDay.CATEGORY_MORNING_COUNTER, '窓口'))
 
     if afternoonCounter:
-        eventList.append(workDay.Event(getTime('12:30'), getTime('17:30'), CATEGORY_AFTERNOON_COUNTER, '窓口'))
+        eventList.append(workDay.Event(getTime('12:30'), getTime('17:30'), workDay.CATEGORY_AFTERNOON_COUNTER, '窓口'))
 
     if eveningCounter:
-        eventList.append(workDay.Event(getTime('17:30'), getTime('21:30'), CATEGORY_EVENING_COUNTER, '窓口'))
+        eventList.append(workDay.Event(getTime('17:30'), getTime('21:30'), workDay.CATEGORY_EVENING_COUNTER, '窓口'))
 
     personId   = row[0]
     personName = row[1]
@@ -263,11 +259,13 @@ def initialize():
     for date in date_range(startDate, endDate):
 
         # TODO 祝日設定も追加
-        if date.weekday() == 6:
+        if date.weekday() == 6 or jpholiday.is_holiday(date.date()):
             workDayList.append(workDay.WorkDay(date, True))
 
         else:
             workDayList.append(workDay.WorkDay(date))
+
+        print(date, jpholiday.is_holiday(date.date()))
 
 if __name__ == '__main__':
     main()

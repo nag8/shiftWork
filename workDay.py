@@ -1,6 +1,13 @@
 # coding: UTF-8
 import datetime
 
+CATEGORY_MORNING_COUNTER   = 1  # 朝窓口
+CATEGORY_AFTERNOON_COUNTER = 2  # 昼窓口
+CATEGORY_EVENING_COUNTER   = 3  # 夜窓口
+CATEGORY_STUDY             = 4  # 研修
+CATEGORY_MEETING           = 5  # 会議
+CATEGORY_EVENT_KAKOM       = 6  # かこむ主催
+
 class WorkDay():
 
     def __init__(self, date, holiday=False):
