@@ -18,6 +18,7 @@ luckyCountList             = [] # ラッキーさんリスト
 '''
 参照
 https://www.draw.io/#G1NWr0eZlKIxYNEkeO8e29hx7TYkem8LQk
+https://qiita.com/tekitoh/items/fc8e3aeacc1cf0a0616c
 '''
 
 def main():
@@ -26,10 +27,9 @@ def main():
 
     createShift()
 
+    alertShift()
+
     manageSheet()
-
-
-
 
 
 def createShift():
@@ -61,6 +61,40 @@ def createShift():
                 for person in wd.personList:
                     if person.name in scheduleDict[schedule][1]:
                         person.work.appendEvent(scheduleDict[schedule][2])
+
+def alertShift():
+
+    for wd in workDayList:
+        for person in wd.personList:
+            checkOverlapTime(wd, person, person.work.eventList)
+
+
+def checkOverlapTime(wd, person, eventList):
+
+    count = 0
+
+    for event in eventList:
+
+        count += 1
+
+        for i in range(len(eventList) - count):
+            starttime1 = event.startTime
+            endtime1   = event.endTime
+            starttime2 = eventList[i + count].startTime
+            endtime2   = eventList[i + count].endTime
+            if starttime1 < endtime2 and endtime1 > starttime2:
+                print('Overlap:', '{}/{}'.format(wd.date.month, wd.date.day), person.name, event.name, event.startTime, eventList[i + count].name, eventList[i + count].startTime)
+                assignOther(wd, person, event)
+
+def assignOther(wd, person, event):
+
+    for otherPerson in wd.personList:
+
+        if person.id != otherPerson.id:
+
+            # TODO 他の人の予定がその時間空いているかの確認
+            pass
+
 
 # 表を編集して出力
 def manageSheet():
@@ -147,8 +181,8 @@ def getScheduleDict():
             duplicateList[1].append(row[8])
 
         elif row[5] in workDay.categoryDict:
-            startTime = getTime(row[2][:4])
-            endTime   = getTime(row[4][:4])
+            startTime = getTime(row[2][:5])
+            endTime   = getTime(row[4][:5])
             category  = workDay.categoryDict[row[5]]
             name      = row[6]
             person    = row[8]
@@ -282,7 +316,6 @@ def initialize():
 
     for date in date_range(startDate, endDate):
 
-        # TODO 祝日設定も追加
         if date.weekday() == 6 or jpholiday.is_holiday(date.date()):
             workDayList.append(workDay.WorkDay(date, True))
 
