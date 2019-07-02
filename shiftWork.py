@@ -4,7 +4,7 @@ import workDay
 import csv
 from dateutil.relativedelta import relativedelta
 from datetime import date, timedelta
-import datetime
+import datetime as dt
 import calendar
 import jpholiday
 from operator import itemgetter
@@ -29,9 +29,13 @@ def main():
     manageSheet()
 
 
+
+
+
 def createShift():
 
     basicShiftList = getBasicShiftList()
+    scheduleDict   = getScheduleDict()
 
     count3rdSunday = 0
 
@@ -51,6 +55,12 @@ def createShift():
                 person.work.startTime = getTime('8:30')
                 person.work.endTime   = getTime('17:30')
                 person.work.eventList = [workDay.Event(getTime('8:30'), getTime('17:30'), workDay.CATEGORY_STUDY, '第3SUNDAY')]
+
+        for schedule in scheduleDict:
+            if scheduleDict[schedule][0].day == wd.date.day:
+                for person in wd.personList:
+                    if person.name in scheduleDict[schedule][1]:
+                        person.work.appendEvent(scheduleDict[schedule][2])
 
 # 表を編集して出力
 def manageSheet():
@@ -120,6 +130,32 @@ def getCounterList(eventList):
             subList.append('')
 
     return subList
+
+def getScheduleDict():
+
+    rows = getCsv(iniFile.get('CSV', 'EVENT'))
+
+    eventDict = {}
+
+    for row in rows:
+
+        date    = dt.datetime.strptime(row[1], '%Y/%m/%d')
+        eventId = date.strftime('%m/%d') + '_' + row[0]
+
+        if (eventId in eventDict):
+            duplicateList = eventDict[eventId]
+            duplicateList[1].append(row[8])
+
+        elif row[5] in workDay.categoryDict:
+            startTime = getTime(row[2][:4])
+            endTime   = getTime(row[4][:4])
+            category  = workDay.categoryDict[row[5]]
+            name      = row[6]
+            person    = row[8]
+
+            eventDict[eventId] = [date, [person], workDay.Event(startTime, endTime, category, name)]
+
+    return eventDict
 
 # ラッキーさん抽選
 def lotteryLucky():
@@ -208,30 +244,18 @@ def getTime(timeStr):
 
     if timeStr:
         timeList = timeStr.split(':')
-        return datetime.time(int(timeList[0]), int(timeList[1]), 0, 0)
+        return dt.time(int(timeList[0]), int(timeList[1]), 0, 0)
     else:
         return None
 
-def getCategory(str):
-
-    categoryDict = {
-        '窓口': 1,
-        'test':   'Kevin Ford Mench',
-        'test2':  'Brooks Litchfield Conrad'
-    }
-
-    return categoryDict[str]
-
 # 開始日から終了日までの日のリストを取得
-def date_range(start_date: datetime, end_date: datetime):
+def date_range(start_date: dt, end_date: dt):
     diff = (end_date - start_date).days + 1
     return (start_date + timedelta(i) for i in range(diff))
 
-# csvファイルをリスト形式で開く（読み取り専用）
 def getCsv(csvPath):
     with open(csvPath, 'rt') as fin:
         cin = csv.reader(fin)
-        # 1行目を飛ばす
         next(cin)
         return [row for row in cin]
 
@@ -251,7 +275,7 @@ def initialize():
 
 
     # 翌月初日と末日を取得
-    startDate = (datetime.datetime.today() + relativedelta(months=1)).replace(day=1)
+    startDate = (dt.datetime.today() + relativedelta(months=1)).replace(day=1)
     endDate   = (startDate + relativedelta(months=1)).replace(day=1) - timedelta(days=1)
 
     global workDayList
@@ -265,7 +289,6 @@ def initialize():
         else:
             workDayList.append(workDay.WorkDay(date))
 
-        print(date, jpholiday.is_holiday(date.date()))
 
 if __name__ == '__main__':
     main()

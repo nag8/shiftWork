@@ -1,37 +1,30 @@
 # coding: UTF-8
 import configparser
-import event
 import csv
+import workDay
 
 
 iniFile      = ''  # 設定
 nickNameDict = {}  # ニックネーム
 
-# メイン処理
 def main():
 
-    print('処理開始！')
-
-    # 初期化
     initialize()
 
-    # 表の変換
-    manageSheet()
+    getData()
 
-    print('処理終了！')
 
-# シートの集計
-def manageSheet():
+def getData():
 
-    # csvファイルを取得
-    rows = getCsv(iniFile.get('settings', 'CSV'))
+    rows = getCsv(iniFile.get('CSV', 'EVENT'))
 
     eventDict = {}
 
     for row in rows:
 
         # idと開始日からイベントIDを作成
-        eventId = row[0] + row[1]
+        eventId = row[0] + '_' + row[1]
+        print(row)
 
         # 既に同じIDが登録されている場合
         if (eventId in eventDict):
@@ -42,25 +35,24 @@ def manageSheet():
         elif row[5] in ('会議', 'かこむ主催'):
 
             # イベント辞書にIDをキーとして設定
-            eventDict[eventId] = event.event(row)
+            # eventDict[eventId] = event.Event(startTime, endTime, category, name)
+            pass
 
-    writeCsv(eventDict)
+    setNickName(eventDict)
 
-
-# csvファイルを読み取りで開く
 def getCsv(csvPath):
     with open(csvPath, 'rt') as fin:
         cin = csv.reader(fin)
         header = next(cin)
         return [row for row in cin]
 
-# csvファイルに情報を編集して出力
-def writeCsv(eventDict):
+
+def setNickName(eventDict):
 
     eventList = []
     global nickNameDict
 
-    with open(iniFile.get('settings', 'CSV_NICK'), newline='') as csvfile:
+    with open(iniFile.get('CSV', 'NICK_NAME'), newline='') as csvfile:
         nickNameDict = csv.DictReader(csvfile)
 
     for key in eventDict:
@@ -69,17 +61,13 @@ def writeCsv(eventDict):
         nickName = getNicknameStr(outerEvent.person)
         eventList.append([outerEvent.startDate, outerEvent.startTime + '-' + outerEvent.endTime, outerEvent.name ])
 
-    # csvファイルに出力
-    with open(iniFile.get('settings', 'CSV_OUT'), 'wt') as fout:
-        csvout = csv.writer(fout)
-        csvout.writerows(eventList)
 
 # 初期化
 def initialize():
 
     global iniFile
     iniFile = configparser.ConfigParser()
-    iniFile.read('./config.ini', 'UTF-8')
+    iniFile.read('./IN/config.ini', 'UTF-8')
 
 
 def getNicknameStr(nameList):

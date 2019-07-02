@@ -8,6 +8,11 @@ CATEGORY_STUDY             = 4  # 研修
 CATEGORY_MEETING           = 5  # 会議
 CATEGORY_EVENT_KAKOM       = 6  # かこむ主催
 
+categoryDict = {
+    '会議'      :  CATEGORY_MEETING,
+    'かこむ主催' :  CATEGORY_EVENT_KAKOM
+    }
+
 class WorkDay():
 
     def __init__(self, date, holiday=False):
