@@ -15,9 +15,10 @@ class WorkDay():
 class Person():
 
     def __init__(self, id, name, work):
-        self.id   = id
-        self.name = name
-        self.work = work
+        self.id    = id
+        self.name  = name
+        self.work  = work
+        self.lucky = False
 
 
 class Work():

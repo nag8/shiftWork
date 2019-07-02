@@ -2,21 +2,24 @@
 import configparser
 import workDay
 import csv
-import datetime
 from dateutil.relativedelta import relativedelta
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
+import datetime
 import calendar
 import jpholiday
 from operator import itemgetter
+import copy
 
 
-
-iniFile     = '' # 設定
-workDayList = [] # シフト設定日
-luckyList   = [] # ラッキーさんリスト
-CATEGORY_MORNING_COUNTER   = 1
-CATEGORY_AFTERNOON_COUNTER = 2
-CATEGORY_EVENING_COUNTER   = 3
+iniFile                    = '' # 設定
+workDayList                = [] # シフト設定日
+luckyCountList             = [] # ラッキーさんリスト
+CATEGORY_MORNING_COUNTER   = 1  # 朝窓口
+CATEGORY_AFTERNOON_COUNTER = 2  # 昼窓口
+CATEGORY_EVENING_COUNTER   = 3  # 夜窓口
+CATEGORY_STUDY             = 4  # 研修
+CATEGORY_MEETING           = 5  # 会議
+CATEGORY_EVENT_KAKOM       = 6  # かこむ主催
 
 
 '''
@@ -30,6 +33,8 @@ def main():
 
     createShift()
 
+    manageSheet()
+
 
 def createShift():
 
@@ -37,19 +42,19 @@ def createShift():
 
     count3rdSunday = 0
 
-    for workDay in workDayList:
+    for wd in workDayList:
 
-        if workDay.date.weekday() == 6:
+        if wd.date.weekday() == 6:
             count3rdSunday += 1
 
-        workDay.personList = basicShiftList[workDay.date.weekday()]
+        wd.personList = copy.deepcopy(basicShiftList[wd.date.weekday()])
 
         # 第3SUNDAYの場合
         if count3rdSunday == 3:
-            # workDay.
-            pass
-
-    manageSheet()
+            for person in wd.personList:
+                person.startTime = getTime('8:30')
+                person.endTime   = getTime('17:30')
+                person.eventList = [workDay.Event(getTime('8:30'), getTime('17:30'), CATEGORY_STUDY, '第3SUNDAY')]
 
 # 表を編集して出力
 def manageSheet():
@@ -67,12 +72,13 @@ def manageSheet():
     for person in workDayList[0].personList:
         printList.append([person.name])
 
+    lotteryLucky()
 
     # 日付行
-    for workDay in workDayList:
+    for wd in workDayList:
 
         # 日付
-        day = workDay.date
+        day = wd.date
         dayStr = '{}/{}'.format(day.month, day.day)
 
         printList[0].append('朝' + dayStr)
@@ -87,16 +93,17 @@ def manageSheet():
         for i in range(6):
             printList[1].append(yobiStr)
 
-        for i, person in enumerate(workDay.personList):
+        for i, person in enumerate(wd.personList):
 
             printList[i + 2].extend(getCounterList(person.work.eventList))
             printList[i + 2].append(person.work.startTime)
             printList[i + 2].append(person.work.endTime)
-            printList[i + 2].append('')
+            if person.lucky:
+                printList[i + 2].append('ラッキー')
+            else:
+                printList[i + 2].append('')
 
-    lotteryLucky()
     writeCsv(printList)
-
 
 def getCounterList(eventList):
 
@@ -118,40 +125,44 @@ def getCounterList(eventList):
 
     return subList
 
-
 # ラッキーさん抽選
 def lotteryLucky():
 
     maxNum = 999
 
     global workDayList
-    global luckyList
+    global luckyCountList
 
     # ラッキーさんリストが空の場合
-    if not luckyList:
+    if not luckyCountList:
         for person in workDayList[0].personList:
-            luckyList.append([0, person])
+            luckyCountList.append([0, person])
 
-    print(luckyList)
+    for wd in workDayList:
 
-    for workDay in workDayList:
+        # 平日の場合
+        if wd.date.weekday() < 5:
 
-        lotteryList = luckyList
+            lotteryList = copy.deepcopy(luckyCountList)
 
-        for i, person in enumerate(workDay.personList):
+            for i, person in enumerate(wd.personList):
 
-            if person.work.startTime != '8:30':
-                lotteryList[i][0] = maxNum
+                if not person.work.startTime or person.work.startTime.hour != 8:
+                    lotteryList[i][0] = maxNum
 
-        for lottery in lotteryList:
-            print(lottery[1].name)
+            lotteryList.sort(key=lambda x:x[0])
 
-        lotteryList.sort(key=lambda x:x[0])
+            for lucky in luckyCountList:
+                if lucky[1].id == lotteryList[0][1].id:
+                    lucky[0] += 1
 
-        for lottery in lotteryList:
-            print('lottery :' + lottery[1].name)
+                    for person in wd.personList:
 
-        print(lotteryList[0][1].name)
+                        if person.id == lucky[1].id:
+                            person.lucky = True
+                            break
+
+                    break
 
 # 基本シフト情報を取得
 def getBasicShiftList():
@@ -176,25 +187,34 @@ def getBasicPerson(row, num):
 
     eventList = []
 
-    startTime        = row[2 + num * 5]
-    endTime          = row[3 + num * 5]
+    # 一旦時刻も文字列で格納
+    startTime        = getTime(row[2 + num * 5])
+    endTime          = getTime(row[3 + num * 5])
     morningCounter   = row[4 + num * 5]
     afternoonCounter = row[5 + num * 5]
     eveningCounter   = row[6 + num * 5]
 
     if morningCounter:
-        eventList.append(workDay.Event('08:30', '12:30', CATEGORY_MORNING_COUNTER, '窓口'))
+        eventList.append(workDay.Event(getTime('8:30'), getTime('12:30'), CATEGORY_MORNING_COUNTER, '窓口'))
 
     if afternoonCounter:
-        eventList.append(workDay.Event('12:30', '17:30', CATEGORY_AFTERNOON_COUNTER, '窓口'))
+        eventList.append(workDay.Event(getTime('12:30'), getTime('17:30'), CATEGORY_AFTERNOON_COUNTER, '窓口'))
 
     if eveningCounter:
-        eventList.append(workDay.Event('17:30', '21:30', CATEGORY_EVENING_COUNTER, '窓口'))
+        eventList.append(workDay.Event(getTime('17:30'), getTime('21:30'), CATEGORY_EVENING_COUNTER, '窓口'))
 
     personId   = row[0]
     personName = row[1]
 
     return workDay.Person(personId, personName, workDay.Work(startTime, endTime, eventList))
+
+def getTime(timeStr):
+
+    if timeStr:
+        timeList = timeStr.split(':')
+        return datetime.time(int(timeList[0]), int(timeList[1]), 0, 0)
+    else:
+        return None
 
 def getCategory(str):
 
@@ -235,7 +255,7 @@ def initialize():
 
 
     # 翌月初日と末日を取得
-    startDate = (datetime.today() + relativedelta(months=1)).replace(day=1)
+    startDate = (datetime.datetime.today() + relativedelta(months=1)).replace(day=1)
     endDate   = (startDate + relativedelta(months=1)).replace(day=1) - timedelta(days=1)
 
     global workDayList
