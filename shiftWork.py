@@ -64,10 +64,25 @@ def createShift():
 
 def alertShift():
 
-    for wd in workDayList:
+    for i, wd in enumerate(workDayList):
         for person in wd.personList:
             checkOverlapTime(wd, person, person.work.eventList)
+            # checkWork5days(wd, i, workDayList, person)
 
+
+def checkWork5days(wd, i, workDayList, person):
+    # TODO 5連勤以上の場合通知する
+    # 月末のときエラーになる。要修正
+
+    count = 0
+
+    for j in range(5):
+        for p in workDayList[i + j].personList:
+            if person.id == p.id and p.work.startTime:
+                count += 1
+
+    if count == 3:
+        print(count, '連勤')
 
 def checkOverlapTime(wd, person, eventList):
 
@@ -188,6 +203,9 @@ def getScheduleDict():
             person    = row[8]
 
             eventDict[eventId] = [date, [person], workDay.Event(startTime, endTime, category, name)]
+
+    for id in eventDict:
+        print(eventDict[id])
 
     return eventDict
 
