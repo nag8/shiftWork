@@ -10,10 +10,9 @@ import jpholiday
 from operator import itemgetter
 import copy
 
-iniFile                    = '' # 設定
-workDayList                = [] # シフト設定日
-luckyCountList             = [] # ラッキーさんリスト
-
+iniFile = ''  # 設定
+workDayList = []  # シフト設定日
+luckyCountList = []  # ラッキーさんリスト
 
 '''
 参照
@@ -21,8 +20,8 @@ https://www.draw.io/#G1NWr0eZlKIxYNEkeO8e29hx7TYkem8LQk
 https://qiita.com/tekitoh/items/fc8e3aeacc1cf0a0616c
 '''
 
-def main():
 
+def main():
     initialize()
 
     createShift()
@@ -33,9 +32,8 @@ def main():
 
 
 def createShift():
-
     basicShiftList = getBasicShiftList()
-    scheduleDict   = getScheduleDict()
+    scheduleDict = getScheduleDict()
 
     count3rdSunday = 0
 
@@ -53,8 +51,9 @@ def createShift():
         if count3rdSunday == 3 and wd.date.weekday() == 6:
             for person in wd.personList:
                 person.work.startTime = getTime('8:30')
-                person.work.endTime   = getTime('17:30')
-                person.work.eventList = [workDay.Event(getTime('8:30'), getTime('17:30'), workDay.CATEGORY_STUDY, '第3SUNDAY')]
+                person.work.endTime = getTime('17:30')
+                person.work.eventList = [
+                    workDay.Event(getTime('8:30'), getTime('17:30'), workDay.CATEGORY_STUDY, '第3SUNDAY')]
 
         for schedule in scheduleDict:
             if scheduleDict[schedule][0].day == wd.date.day:
@@ -62,8 +61,8 @@ def createShift():
                     if person.name in scheduleDict[schedule][1]:
                         person.work.appendEvent(scheduleDict[schedule][2])
 
-def alertShift():
 
+def alertShift():
     for i, wd in enumerate(workDayList):
         for person in wd.personList:
             checkOverlapTime(wd, person, person.work.eventList)
@@ -84,8 +83,8 @@ def checkWork5days(wd, i, workDayList, person):
     if count == 3:
         print(count, '連勤')
 
-def checkOverlapTime(wd, person, eventList):
 
+def checkOverlapTime(wd, person, eventList):
     count = 0
 
     for event in eventList:
@@ -94,35 +93,34 @@ def checkOverlapTime(wd, person, eventList):
 
         for i in range(len(eventList) - count):
             starttime1 = event.startTime
-            endtime1   = event.endTime
+            endtime1 = event.endTime
             starttime2 = eventList[i + count].startTime
-            endtime2   = eventList[i + count].endTime
+            endtime2 = eventList[i + count].endTime
             if starttime1 < endtime2 and endtime1 > starttime2:
-                print('Overlap:', '{}/{}'.format(wd.date.month, wd.date.day), person.name, event.name, event.startTime, eventList[i + count].name, eventList[i + count].startTime)
+                print('Overlap:', '{}/{}'.format(wd.date.month, wd.date.day), person.name, event.name, event.startTime,
+                      eventList[i + count].name, eventList[i + count].startTime)
                 assignOther(wd, person, event)
 
-def assignOther(wd, person, event):
 
+def assignOther(wd, person, event):
     for otherPerson in wd.personList:
 
         if person.id != otherPerson.id:
-
             # TODO 他の人の予定がその時間空いているかの確認
             pass
 
 
 # 表を編集して出力
 def manageSheet():
-
     yobi = {
-        0 : "月",
-        1 : "火",
-        2 : "水",
-        3 : "木",
-        4 : "金",
-        5 : "土",
-        6 : "日"}
-    printList = [['日付'],['曜日']]
+        0: "月",
+        1: "火",
+        2: "水",
+        3: "木",
+        4: "金",
+        5: "土",
+        6: "日"}
+    printList = [['日付'], ['曜日']]
 
     for person in workDayList[0].personList:
         printList.append([person.name])
@@ -160,12 +158,13 @@ def manageSheet():
 
     writeCsv(printList)
 
-def getCounterList(eventList):
 
+def getCounterList(eventList):
     subList = []
     strCounter = '窓口'
 
-    for searchCategory in {workDay.CATEGORY_MORNING_COUNTER, workDay.CATEGORY_AFTERNOON_COUNTER, workDay.CATEGORY_EVENING_COUNTER}:
+    for searchCategory in {workDay.CATEGORY_MORNING_COUNTER, workDay.CATEGORY_AFTERNOON_COUNTER,
+                           workDay.CATEGORY_EVENING_COUNTER}:
 
         counterFlg = False
 
@@ -180,15 +179,15 @@ def getCounterList(eventList):
 
     return subList
 
-def getScheduleDict():
 
+def getScheduleDict():
     rows = getCsv(iniFile.get('CSV', 'EVENT'))
 
     eventDict = {}
 
     for row in rows:
 
-        date    = dt.datetime.strptime(row[1], '%Y/%m/%d')
+        date = dt.datetime.strptime(row[1], '%Y/%m/%d')
         eventId = date.strftime('%m/%d') + '_' + row[0]
 
         if (eventId in eventDict):
@@ -197,10 +196,10 @@ def getScheduleDict():
 
         elif row[5] in workDay.categoryDict:
             startTime = getTime(row[2][:5])
-            endTime   = getTime(row[4][:5])
-            category  = workDay.categoryDict[row[5]]
-            name      = row[6]
-            person    = row[8]
+            endTime = getTime(row[4][:5])
+            category = workDay.categoryDict[row[5]]
+            name = row[6]
+            person = row[8]
 
             eventDict[eventId] = [date, [person], workDay.Event(startTime, endTime, category, name)]
 
@@ -209,9 +208,9 @@ def getScheduleDict():
 
     return eventDict
 
+
 # ラッキーさん抽選
 def lotteryLucky():
-
     maxNum = 999
 
     global workDayList
@@ -234,7 +233,7 @@ def lotteryLucky():
                 if not person.work.startTime or person.work.startTime.hour != 8:
                     lotteryList[i][0] = maxNum
 
-            lotteryList.sort(key=lambda x:x[0])
+            lotteryList.sort(key=lambda x: x[0])
 
             for lucky in luckyCountList:
                 if lucky[1].id == lotteryList[0][1].id:
@@ -248,9 +247,9 @@ def lotteryLucky():
 
                     break
 
+
 # 基本シフト情報を取得
 def getBasicShiftList():
-
     rows = getCsv(iniFile.get('CSV', 'BASIC'))
 
     basicShiftList = []
@@ -267,16 +266,16 @@ def getBasicShiftList():
     # 転置
     return [list(x) for x in zip(*basicShiftList)]
 
-def getBasicPerson(row, num):
 
+def getBasicPerson(row, num):
     eventList = []
 
     # 一旦時刻も文字列で格納
-    startTime        = getTime(row[2 + num * 5])
-    endTime          = getTime(row[3 + num * 5])
-    morningCounter   = row[4 + num * 5]
+    startTime = getTime(row[2 + num * 5])
+    endTime = getTime(row[3 + num * 5])
+    morningCounter = row[4 + num * 5]
     afternoonCounter = row[5 + num * 5]
-    eveningCounter   = row[6 + num * 5]
+    eveningCounter = row[6 + num * 5]
 
     if morningCounter:
         eventList.append(workDay.Event(getTime('8:30'), getTime('12:30'), workDay.CATEGORY_MORNING_COUNTER, '窓口'))
@@ -287,23 +286,25 @@ def getBasicPerson(row, num):
     if eveningCounter:
         eventList.append(workDay.Event(getTime('17:30'), getTime('21:30'), workDay.CATEGORY_EVENING_COUNTER, '窓口'))
 
-    personId   = row[0]
+    personId = row[0]
     personName = row[1]
 
     return workDay.Person(personId, personName, workDay.Work(startTime, endTime, eventList))
 
-def getTime(timeStr):
 
+def getTime(timeStr):
     if timeStr:
         timeList = timeStr.split(':')
         return dt.time(int(timeList[0]), int(timeList[1]), 0, 0)
     else:
         return None
 
+
 # 開始日から終了日までの日のリストを取得
 def date_range(start_date: dt, end_date: dt):
     diff = (end_date - start_date).days + 1
     return (start_date + timedelta(i) for i in range(diff))
+
 
 def getCsv(csvPath):
     with open(csvPath, 'rt') as fin:
@@ -311,24 +312,23 @@ def getCsv(csvPath):
         next(cin)
         return [row for row in cin]
 
+
 # csvファイルに出力
 def writeCsv(strList):
-
     # csvファイルに出力
     with open(iniFile.get('CSV', 'OUT'), 'wt', encoding='shift_jis') as fout:
         csvout = csv.writer(fout)
         csvout.writerows(strList)
 
-def initialize():
 
+def initialize():
     global iniFile
     iniFile = configparser.ConfigParser()
     iniFile.read('./IN/config.ini', 'UTF-8')
 
-
     # 翌月初日と末日を取得
     startDate = (dt.datetime.today() + relativedelta(months=1)).replace(day=1)
-    endDate   = (startDate + relativedelta(months=1)).replace(day=1) - timedelta(days=1)
+    endDate = (startDate + relativedelta(months=1)).replace(day=1) - timedelta(days=1)
 
     global workDayList
 

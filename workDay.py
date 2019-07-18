@@ -46,6 +46,8 @@ class Work():
 
 class Event():
 
+    startTime: datetime
+
     def __init__(self, startTime, endTime, category, name):
         self.startTime = startTime
         self.endTime   = endTime
