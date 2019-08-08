@@ -61,6 +61,8 @@ def setNickName(eventDict):
         nickName = getNicknameStr(outerEvent.person)
         eventList.append([outerEvent.startDate, outerEvent.startTime + '-' + outerEvent.endTime, outerEvent.name ])
 
+    
+
 
 # 初期化
 def initialize():
@@ -74,12 +76,7 @@ def getNicknameStr(nameList):
 
     nickNameStr = ''
 
-    for value in nickNameDict:
-        print(nickNameDict[value])
-
     for name in nameList:
-
-        print(name)
 
         # 既に名前がある場合
         if name in nickNameDict:
