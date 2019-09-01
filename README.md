@@ -30,11 +30,11 @@ shiftWork/IN/nickName.csv
 ### 各メンバー作業
 1. 以下を実施する
 
-| 種別 | 内容 |
-| -------- | -------- |
-|作業|[サイボウズofficeのスケジュール](https://npo-seeds.cybozu.com/o/ag.cgi?page=ScheduleIndex)に以下を記入する|
-|内容|来月の休みたい日・時間。予定のカテゴリは「出れない」|
-|期限|19日まで|
+ 種別 | 内容 
+ :--------: | -------- 
+作業|[サイボウズofficeのスケジュール](https://npo-seeds.cybozu.com/o/ag.cgi?page=ScheduleIndex)に以下を記入する
+内容|来月の休みたい日・時間。予定のカテゴリは「出れない」
+期限|19日まで
 
 ### シフト担当者作業
 1. 各ファイルが前月より変わらないか確認
